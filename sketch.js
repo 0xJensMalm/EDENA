@@ -1,12 +1,29 @@
 let colors = ["#292f36", "#4ecdc4", "#f7fff7", "#ff6b6b", "#ffe66d"];
+
+// Canvas and Graphics Settings
+let canvasSize;
+let gfxBufferWidth = 2000;
+let gfxBufferHeight = 2000;
+let pixelDensityValue = 2;
+
+// Art Generation Settings
+let shapeCount = 30;
+let numRange = { min: 120, max: 150 };
+let lengthRange = { min: 100, max: 500 };
+
+// Shape Transformation Settings
+let noiseScaleRange = { min: 0.001, max: 0.005 };
+let transExtent = 4;
+let resetChance = 0.001;
+let resetOffsetRange = { min: -100, max: 100 };
+
 let gfx; // Graphics buffer for high-res rendering
 
 function setup() {
-  // Determine the size for a square canvas based on the smaller window dimension
-  let canvasSize = min(windowWidth, windowHeight);
+  canvasSize = min(windowWidth, windowHeight);
   createCanvas(canvasSize, canvasSize);
-  gfx = createGraphics(2000, 2000);
-  gfx.pixelDensity(2);
+  gfx = createGraphics(gfxBufferWidth, gfxBufferHeight);
+  gfx.pixelDensity(pixelDensityValue);
   noLoop();
   setupControls();
   generateArt();
@@ -15,11 +32,11 @@ function setup() {
 function generateArt() {
   gfx.background(random(colors)); // Clear the buffer with a new background color
 
-  for (let i = 0; i < 50; i++) {
+  for (let i = 0; i < shapeCount; i++) {
     let x = gfx.width / 2;
     let y = gfx.height / 2;
-    let n = int(random(120, 150));
-    let l = int(random(300, 400));
+    let n = int(random(numRange.min, numRange.max));
+    let l = int(random(lengthRange.min, lengthRange.max));
     hrr(gfx, x, y, n, l); // Draw new shapes on the gfx buffer
   }
 
@@ -27,7 +44,7 @@ function generateArt() {
 }
 
 function hrr(g, x, y, num, l) {
-  let nScl = random(0.001, 0.005); // Vary the noise scale for more dynamic transformation
+  let nScl = random(noiseScaleRange.min, noiseScaleRange.max); // Vary the noise scale
   g.noStroke();
 
   for (let j = 0; j < num; j++) {
@@ -35,7 +52,6 @@ function hrr(g, x, y, num, l) {
     col.setAlpha(random(100, 255));
     g.fill(col);
 
-    // Start a new shape
     g.beginShape();
     let x0 = x;
     let y0 = y;
@@ -43,15 +59,13 @@ function hrr(g, x, y, num, l) {
     for (let i = 0; i < l; i++) {
       g.vertex(x0, y0);
 
-      // Use noise to calculate the angle for transformation
       let a = noise(x0 * nScl, y0 * nScl) * TWO_PI * 2;
-      x0 += cos(a) * 3; // Adjust these values to control the transformation extent
-      y0 += sin(a) * 3;
+      x0 += cos(a) * transExtent;
+      y0 += sin(a) * transExtent;
 
-      // Occasionally reset the position to create disjointed shapes
-      if (random(1) < 0.01) {
-        x0 = x + random(-50, 50);
-        y0 = y + random(-50, 50);
+      if (random(1) < resetChance) {
+        x0 = x + random(resetOffsetRange.min, resetOffsetRange.max);
+        y0 = y + random(resetOffsetRange.min, resetOffsetRange.max);
       }
     }
 
@@ -71,7 +85,6 @@ function setupControls() {
     generateArt(); // Call generateArt when the button is pressed
   });
 
-  // Setup the save button as before
   let saveBtn = createButton("Save");
   saveBtn.position(10, 40);
   saveBtn.mousePressed(() => {
@@ -80,6 +93,6 @@ function setupControls() {
 }
 
 function windowResized() {
-  let canvasSize = min(windowWidth, windowHeight);
+  canvasSize = min(windowWidth, windowHeight);
   resizeCanvas(canvasSize, canvasSize);
 }
